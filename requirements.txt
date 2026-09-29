@@ -1,4 +1,34 @@
-faiss-cpu>=1.7.4
+# =========================================================
+# Smart Travel Planner - Complete Production Dependencies
+# =========================================================
+
+# --- Web Framework & ASGI Server ---
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+starlette>=0.36.0
+python-multipart>=0.0.7
+
+# --- Data Validation & Models ---
+pydantic>=2.0.0,<3.0.0
+pydantic-settings>=2.0.0
+
+# --- Google Gemini & LLM Backend ---
 google-generativeai>=0.8.3
-numpy>=1.20.0
-pydantic>=2.0
+
+# --- CrewAI Flow & Agent Orchestration ---
+crewai[file-processing,litellm,tools]>=1.15.11,<2.0.0
+litellm<=1.82.6
+
+# --- RAG, Vector Search & Numerical Computation ---
+faiss-cpu>=1.7.4
+numpy>=1.24.0,<2.0.0
+
+# --- HTTP Clients & Networking ---
+requests>=2.31.0
+httpx>=0.27.0
+aiohttp>=3.9.0
+
+# --- Utilities & Environment ---
+python-dotenv>=1.0.0
+typing-extensions>=4.8.0
+
