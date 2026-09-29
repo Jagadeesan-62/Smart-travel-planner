@@ -1,0 +1,597 @@
+{
+  "name": "SmartTravelPlanner",
+  "state": {
+    "type": "json_schema",
+    "json_schema": {
+      "type": "object",
+      "required": [
+        "starting_location",
+        "travel_dates",
+        "num_travellers",
+        "total_budget",
+        "interests",
+        "hotel_type",
+        "transport_preferences"
+      ],
+      "properties": {
+        "interests": {
+          "type": "string"
+        },
+        "itinerary": {
+          "type": "string"
+        },
+        "hotel_type": {
+          "type": "string"
+        },
+        "budget_plan": {
+          "type": "string"
+        },
+        "destination": {
+          "type": "string"
+        },
+        "final_report": {
+          "type": "string"
+        },
+        "total_budget": {
+          "type": "number"
+        },
+        "travel_dates": {
+          "type": "string"
+        },
+        "budget_status": {
+          "type": "string"
+        },
+        "hotel_options": {
+          "type": "string"
+        },
+        "booking_result": {
+          "type": "string"
+        },
+        "flight_options": {
+          "type": "string"
+        },
+        "num_travellers": {
+          "type": "integer"
+        },
+        "travel_profile": {
+          "type": "object",
+          "properties": {
+            "interests": {
+              "type": "string"
+            },
+            "hotel_type": {
+              "type": "string"
+            },
+            "destination": {
+              "type": "string"
+            },
+            "total_budget": {
+              "type": "number"
+            },
+            "travel_dates": {
+              "type": "string"
+            },
+            "num_travellers": {
+              "type": "integer"
+            },
+            "starting_location": {
+              "type": "string"
+            },
+            "ai_choose_destination": {
+              "type": "boolean"
+            },
+            "transport_preferences": {
+              "type": "string"
+            },
+            "additional_requirements": {
+              "type": "string"
+            }
+          }
+        },
+        "approval_status": {
+          "type": "string"
+        },
+        "starting_location": {
+          "type": "string"
+        },
+        "validation_status": {
+          "type": "string"
+        },
+        "replanning_attempts": {
+          "type": "integer"
+        },
+        "selected_destination": {
+          "type": "string"
+        },
+        "ai_choose_destination": {
+          "type": "boolean"
+        },
+        "destination_rationale": {
+          "type": "string"
+        },
+        "transport_preferences": {
+          "type": "string"
+        },
+        "additional_requirements": {
+          "type": "string"
+        },
+        "alternative_destinations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "schema": "crewai.flow/v1",
+  "methods": {
+    "trip_intake": {
+      "do": {
+        "call": "crew",
+        "with": {
+          "tasks": [
+            {
+              "name": "validate_inputs",
+              "agent": "intake_agent",
+              "description": "Review and validate the following travel inputs:\n- Starting location: {starting_location}\n- Destination (optional): {destination}\n- Travel dates: {travel_dates}\n- Number of travellers: {num_travellers}\n- Total budget (INR): {total_budget}\n- Interests: {interests}\n- Hotel type: {hotel_type}\n- Transport preferences: {transport_preferences}\n- Additional requirements: {additional_requirements}\n- AI choose destination: {ai_choose_destination}\n\nValidate that all required fields are present and sensible. Flag missing or inconsistent data.",
+              "expected_output": "A validation report listing any issues found or confirming all inputs are valid."
+            },
+            {
+              "name": "build_travel_profile",
+              "agent": "intake_agent",
+              "description": "Using the validated inputs, build a structured TravelProfile JSON object with these fields: starting_location, destination (empty string if AI should choose), travel_dates, num_travellers, total_budget, interests (list), hotel_type, transport_preferences, additional_requirements, ai_choose_destination (boolean). Output the complete profile as a JSON object.",
+              "expected_output": "A complete TravelProfile as a JSON object with all fields populated, ai_choose_destination set correctly, and a brief personalization summary explaining the traveller's key interests and budget category (budget/mid-range/luxury)."
+            }
+          ],
+          "agents": {
+            "intake_agent": {
+              "goal": "Collect, validate, and structure all user travel inputs into a comprehensive TravelProfile. Determine whether the user has chosen a destination or whether AI should select one.",
+              "role": "Trip Intake and Personalization Specialist",
+              "verbose": true,
+              "backstory": "You are an expert travel consultant who carefully listens to travellers, validates their requirements, understands their interests and budget constraints, and transforms raw inputs into a precise structured travel profile ready for planning.",
+              "llm": "gemini/gemini-1.5-flash"
+            }
+          },
+          "inputs": {
+            "interests": "${state.interests}",
+            "hotel_type": "${state.hotel_type}",
+            "destination": "${state.destination}",
+            "total_budget": "${state.total_budget}",
+            "travel_dates": "${state.travel_dates}",
+            "num_travellers": "${state.num_travellers}",
+            "starting_location": "${state.starting_location}",
+            "ai_choose_destination": "${state.ai_choose_destination}",
+            "transport_preferences": "${state.transport_preferences}",
+            "additional_requirements": "${state.additional_requirements}"
+          },
+          "verbose": true
+        }
+      },
+      "start": true,
+      "router": false,
+      "description": "Validates and structures all user inputs into a TravelProfile, flagging whether the destination is user-selected or should be AI-chosen."
+    },
+    "budget_check": {
+      "do": {
+        "call": "expression",
+        "expr": "(outputs.budget_optimization.raw.contains('over_budget') && !outputs.budget_optimization.raw.contains('within_budget')) && (state.replanning_attempts != null ? state.replanning_attempts : 0) < 3 ? 'begin_replanning' : 'proceed_to_itinerary'"
+      },
+      "emit": [
+        "proceed_to_itinerary",
+        "begin_replanning"
+      ],
+      "start": false,
+      "listen": "budget_optimization",
+      "router": true,
+      "description": "Routes to itinerary planning if within budget, or to replanning if over budget (capped at 3 attempts)."
+    },
+    "replan_budget": {
+      "do": {
+        "call": "crew",
+        "with": {
+          "tasks": [
+            {
+              "name": "assess_overrun",
+              "agent": "replan_agent",
+              "description": "Review the over-budget plan and determine the required savings. Current replanning attempt number: {replanning_attempts}. Budget plan: {budget_plan}. Flight and hotel options: {logistics}. Determine which tier of cost reduction is needed based on attempt number: Attempt 1 - Remove optional activities and non-essential extras. Attempt 2 - Also downgrade hotel to the cheapest option. Attempt 3 - Also find the cheapest transport option AND switch to the next-best alternative destination.",
+              "expected_output": "A cost-reduction assessment listing exactly which items will be cut or downgraded in this attempt, with estimated savings for each change."
+            },
+            {
+              "name": "generate_revised_plan",
+              "agent": "replan_agent",
+              "description": "Generate the revised budget allocation after applying the cost reductions identified in the assessment. Recalculate the total estimated cost. Mark budget_status as 'within_budget' if the new total is at or below the user's budget of {total_budget} INR, otherwise 'over_budget'. Include notes on what was changed and why. Return a revised BudgetPlan JSON.",
+              "expected_output": "A revised BudgetPlan JSON with updated allocations, new total_estimated_cost, budget_status, changes_made (list of what was modified), and replanning_attempt_number."
+            }
+          ],
+          "agents": {
+            "replan_agent": {
+              "goal": "Bring the travel plan within budget using a tiered cost-reduction strategy.",
+              "role": "Budget Replanning Strategist",
+              "verbose": true,
+              "backstory": "You are a resourceful travel cost optimizer who knows exactly which levers to pull to reduce travel expenses without sacrificing the core experience. You apply budget cuts in a strict priority order to preserve the best possible plan.",
+              "llm": "gemini/gemini-1.5-flash"
+            }
+          },
+          "inputs": {
+            "logistics": "${outputs.flight_hotel_search.raw}",
+            "budget_plan": "${outputs.budget_optimization.raw}",
+            "total_budget": "${state.total_budget}",
+            "replanning_attempts": "${state.replanning_attempts}"
+          },
+          "verbose": true
+        }
+      },
+      "start": false,
+      "listen": "begin_replanning",
+      "router": false,
+      "description": "Attempts to bring the plan within budget by removing optional activities, downgrading hotel, finding cheaper transport, or switching destination — capped at 3 attempts."
+    },
+    "supervisor_route": {
+      "do": {
+        "call": "expression",
+        "expr": "outputs.supervisor_validation.raw.contains('APPROVED') || state.replanning_attempts >= 3 ? 'supervisor_approved' : 'supervisor_replan'"
+      },
+      "emit": [
+        "supervisor_approved",
+        "supervisor_replan"
+      ],
+      "start": false,
+      "listen": "supervisor_validation",
+      "router": true,
+      "description": "Routes to report compilation if supervisor approved, or to replanning if issues remain and attempts are not exhausted."
+    },
+    "itinerary_planning": {
+      "do": {
+        "call": "crew",
+        "with": {
+          "tasks": [
+            {
+              "name": "plan_day_wise_itinerary",
+              "agent": "itinerary_agent",
+              "description": "Create a complete day-by-day itinerary for the following trip:\nTravel profile: {travel_profile}\nSelected destination: {destination_info}\nFlight and hotel options: {logistics}\nApproved budget plan: {budget_plan}\n\nFor each day include: morning activity (with duration and cost), afternoon activity (with duration and cost), evening activity or dinner recommendation, restaurant recommendations with cuisine type and price range, daily transport within the destination, total daily cost estimate, and one backup indoor activity in case of bad weather. Sequence attractions by proximity to minimize travel time. Consider opening hours, seasonal factors, and the traveller's stated interests.",
+              "expected_output": "A complete day-wise itinerary as a JSON array of DayPlan objects, each with: day_number, date, morning (activity, duration, cost, location), afternoon (activity, duration, cost, location), evening (activity/dinner, cost), restaurant_recommendation (name, cuisine, price_range), local_transport (mode, estimated_cost), daily_total_cost, backup_activity, and travel_tips."
+            },
+            {
+              "name": "add_local_insights",
+              "agent": "itinerary_agent",
+              "description": "Enhance the itinerary with practical local insights: best local food dishes to try, cultural etiquette tips, safety notes, best times to visit key attractions to avoid crowds, local transport tips (auto, cab, public transport options), and emergency contact information for the destination. Also add a packing list relevant to the destination and travel dates.",
+              "expected_output": "A LocalInsights JSON object with: must_try_food (array), cultural_tips (array), safety_notes (array), crowd_avoidance_tips (array), transport_tips (array), emergency_contacts (object with hospital and police), and packing_list (array)."
+            }
+          ],
+          "agents": {
+            "itinerary_agent": {
+              "goal": "Create a detailed, practical, and enjoyable day-by-day travel itinerary tailored to the traveller's interests, budget, and selected destination.",
+              "role": "Expert Itinerary Planning Specialist",
+              "verbose": true,
+              "backstory": "You are a seasoned travel itinerary designer with intimate knowledge of Indian destinations. You craft itineraries that balance must-see attractions with hidden gems, account for travel times and opening hours, and ensure every day is memorable within the allotted budget.",
+              "llm": "gemini/gemini-1.5-flash"
+            }
+          },
+          "inputs": {
+            "logistics": "${outputs.flight_hotel_search.raw}",
+            "budget_plan": "${outputs.budget_optimization.raw}",
+            "travel_profile": "${outputs.trip_intake.raw}",
+            "destination_info": "${outputs.destination_selection.raw}"
+          },
+          "verbose": true
+        }
+      },
+      "start": false,
+      "listen": "proceed_to_itinerary",
+      "router": false,
+      "description": "Generates a full day-by-day itinerary with morning, afternoon, and evening activities, restaurant recommendations, and daily costs."
+    },
+    "report_compilation": {
+      "do": {
+        "call": "crew",
+        "with": {
+          "tasks": [
+            {
+              "name": "compile_report_sections",
+              "agent": "report_agent",
+              "description": "Collect and organize all planning outputs into a structured FinalTravelPlan report with these sections:\n1. Trip Summary: destination, dates, travellers, total cost\n2. Destination Selection: selected destination, rationale, two alternatives with reasons\n3. Flight and Transport Details: recommended option, cheapest option, backup option (with all prices and timings)\n4. Hotel Accommodation Details: recommended, cheapest, and backup options (with ratings, prices, facilities)\n5. Complete Budget Breakdown: per-category allocation, total cost, per-person cost, budget status\n6. Day-wise Itinerary: full daily plan with morning/afternoon/evening activities, restaurants, local transport, and daily cost\n7. Local Insights: must-try food, cultural tips, safety notes, packing list\n8. Assumptions and Warnings: any budget overages, replanning notes, data assumptions\n9. Alternative Options: alternative destinations and why they were not selected\n\nInputs:\nTravel profile: {travel_profile}\nDestination info: {destination_info}\nLogistics: {logistics}\nBudget plan: {budget_plan}\nItinerary: {itinerary}\nSupervisor validation: {supervisor_decision}\n\nFormat the report as a clean, readable Markdown document.",
+              "expected_output": "A complete FinalTravelPlan Markdown report with all nine sections, clearly headed, with all numbers in INR, and a final note that booking is subject to human approval."
+            },
+            {
+              "name": "generate_download_metadata",
+              "agent": "report_agent",
+              "description": "Generate download-ready metadata for the report: report filename (using destination and date), report summary (3-5 bullet points for the user), and a JSON version of the FinalTravelPlan structured data for programmatic use in Streamlit. The JSON should have keys: trip_summary, destination_info, flight_options, hotel_options, budget_breakdown, itinerary, local_insights, warnings, alternatives.",
+              "expected_output": "A JSON object with: report_filename (string), report_summary (array of bullet strings), and final_plan_json (the full structured FinalTravelPlan as a nested JSON object)."
+            }
+          ],
+          "agents": {
+            "report_agent": {
+              "goal": "Combine all planning outputs into a comprehensive, beautifully structured final travel report that the user can review and download.",
+              "role": "Travel Report Compiler and Formatter",
+              "verbose": true,
+              "backstory": "You are an expert travel document specialist who transforms raw planning data into polished, professional travel reports. Your reports are clear, comprehensive, and formatted for easy reading and downloading by the traveller.",
+              "llm": "gemini/gemini-1.5-flash"
+            }
+          },
+          "inputs": {
+            "itinerary": "${outputs.itinerary_planning.raw}",
+            "logistics": "${outputs.flight_hotel_search.raw}",
+            "budget_plan": "${outputs.budget_optimization.raw}",
+            "travel_profile": "${outputs.trip_intake.raw}",
+            "destination_info": "${outputs.destination_selection.raw}",
+            "supervisor_decision": "${outputs.supervisor_route.raw}"
+          },
+          "verbose": true
+        }
+      },
+      "start": false,
+      "listen": "supervisor_approved",
+      "router": false,
+      "description": "Combines all agent outputs into a structured FinalTravelPlan report covering destination rationale, flights, hotels, budget breakdown, itinerary, assumptions, warnings, and alternatives — formatted for download."
+    },
+    "budget_optimization": {
+      "do": {
+        "call": "agent",
+        "with": {
+          "goal": "Allocate the travel budget across all expense categories, calculate total cost, and determine whether the plan is within budget.",
+          "role": "Budget Optimization Specialist",
+          "input": "Total budget: ${state.total_budget} INR for ${state.num_travellers} travellers.\nTravel profile and preferences: ${outputs.trip_intake.raw}\nSelected destination details: ${outputs.destination_selection.raw}\nFlight and hotel options: ${outputs.flight_hotel_search.raw}\n\nAllocate the budget across: flights/transport, hotel accommodation, food and dining, local transport, activities and entry fees, shopping/miscellaneous, and emergency reserve (5-10%). Calculate the total estimated cost using the recommended flight and hotel options. Compare total against the user's budget. Flag clearly if over budget and by how much. Suggest the cheapest alternatives if over budget. Return a complete BudgetPlan JSON with: allocations (per category), total_estimated_cost, budget_status ('within_budget' or 'over_budget'), overage_amount (if applicable), recommended_option_costs, and cost_saving_suggestions.\n\nExpected output: A BudgetPlan JSON with all category allocations in INR, total_estimated_cost, budget_status ('within_budget' or 'over_budget'), overage_amount, per_person_cost, and a list of cost_saving_suggestions if over budget.",
+          "verbose": true,
+          "backstory": "You are a meticulous travel finance expert who excels at breaking down budgets into realistic allocations for flights, accommodation, food, local transport, activities, and emergency reserves. You always ensure travellers get maximum value while staying within their financial limits.",
+          "llm": "gemini/gemini-1.5-flash"
+        }
+      },
+      "start": false,
+      "listen": "flight_hotel_search",
+      "router": false,
+      "description": "Allocates the total budget across all categories, calculates total cost, checks against the user's budget, and flags overage if it occurs."
+    },
+    "flight_hotel_search": {
+      "do": {
+        "call": "crew",
+        "with": {
+          "tasks": [
+            {
+              "name": "search_flights",
+              "agent": "logistics_agent",
+              "description": "Search for flight and transport options from {starting_location} to {selected_destination} for {num_travellers} travellers on {travel_dates}. Budget preference: {transport_preferences}. Use mock flight data for Indian routes. Return: 1) Recommended option (best value), 2) Cheapest option, 3) Backup/alternative option. For each include: airline/operator, departure/arrival times, price per person, total price, travel time, class, and booking notes.",
+              "expected_output": "A JSON object with three flight/transport options (recommended, cheapest, backup), each with: operator, price_per_person, total_price, departure_time, arrival_time, duration, class, and notes."
+            },
+            {
+              "name": "search_hotels",
+              "agent": "logistics_agent",
+              "description": "Search for hotels in {selected_destination} for {num_travellers} travellers for the duration of {travel_dates}. Hotel preference: {hotel_type}. Budget context: {total_budget}. Use mock hotel data. Return: 1) Recommended option (best match), 2) Cheapest option, 3) Backup/luxury upgrade option. For each include: hotel name, star rating, price per night, total cost, location description, key facilities, distance from main attractions, and pros/cons.",
+              "expected_output": "A JSON object with three hotel options (recommended, cheapest, backup), each with: name, stars, price_per_night, total_cost, location, facilities (array), distance_to_attractions, and notes."
+            }
+          ],
+          "agents": {
+            "logistics_agent": {
+              "goal": "Find the best flight, transport, and hotel options for the selected destination matching the traveller's budget and preferences.",
+              "role": "Flight, Hotel and Logistics Specialist",
+              "verbose": true,
+              "backstory": "You are an expert travel logistics coordinator with access to comprehensive mock flight and hotel databases for Indian destinations. You excel at finding the best value options across price points and presenting clear comparisons with all relevant details.",
+              "llm": "gemini/gemini-1.5-flash"
+            }
+          },
+          "inputs": {
+            "hotel_type": "${state.hotel_type}",
+            "total_budget": "${state.total_budget}",
+            "travel_dates": "${state.travel_dates}",
+            "num_travellers": "${state.num_travellers}",
+            "starting_location": "${state.starting_location}",
+            "selected_destination": "${outputs.destination_selection.raw}",
+            "transport_preferences": "${state.transport_preferences}"
+          },
+          "verbose": true
+        }
+      },
+      "start": false,
+      "listen": "destination_selection",
+      "router": false,
+      "description": "Searches mock flight/transport and hotel data to return recommended, cheapest, and backup options with price, rating, location, travel time, and facilities."
+    },
+    "replan_budget_check": {
+      "do": {
+        "call": "agent",
+        "with": {
+          "goal": "Determine the final budget outcome after replanning and prepare the best available budget plan for itinerary generation.",
+          "role": "Budget Resolution Specialist",
+          "input": "Replanning attempt number: ${state.replanning_attempts} (max allowed: 3).\nOriginal budget optimization: ${outputs.budget_optimization.raw}\nReplanned budget: ${outputs.replan_budget.raw}\nUser total budget: ${state.total_budget} INR.\n\nAssess whether the replanned budget is now within the user's budget. If still over budget but at max attempts (3), note this and proceed with the best available plan anyway. Summarize: final_budget_status, final_total_cost, remaining_overage (0 if within budget), best_plan_summary, and any warnings for the traveller.\n\nExpected output: A FinalBudgetResolution JSON with: final_budget_status ('within_budget' or 'best_available'), final_total_cost, remaining_overage, best_plan_summary, warnings (array of strings), and replanning_attempts_used.",
+          "verbose": true,
+          "backstory": "You are the final arbiter of budget feasibility. After one or more replanning rounds, you consolidate the best available plan, flag any remaining budget concerns, and ensure the itinerary agent has a clear budget envelope to work within.",
+          "llm": "gemini/gemini-1.5-flash"
+        }
+      },
+      "start": false,
+      "listen": "increment_replanning_attempts",
+      "router": false,
+      "description": "After replanning, checks if the revised plan is now within budget or max attempts reached. Always routes to itinerary (either with the best available plan or a fully resolved one)."
+    },
+    "destination_selection": {
+      "do": {
+        "call": "crew",
+        "with": {
+          "tasks": [
+            {
+              "name": "retrieve_destinations",
+              "agent": "rag_agent",
+              "description": "Using the travel profile from the previous step, retrieve and compare the following Indian destinations from the knowledge base: Munnar, Goa, Jaipur, Ooty, Pondicherry, Manali. Travel profile: {travel_profile}. For each destination, document: average cost per person per day, best season to visit, key attractions, suitable interest categories (nature/adventure/beaches/food/culture), transport accessibility, and typical hotel price ranges.",
+              "expected_output": "A structured comparison table of all six destinations with scores for budget match, interest match, weather suitability, and travel convenience."
+            },
+            {
+              "name": "select_best_destination",
+              "agent": "rag_agent",
+              "description": "Based on the destination comparison, select the single best destination for the traveller. If the user specified a destination, validate it is suitable and explain why; otherwise choose the optimal one. Also identify two alternative destinations. Provide: 1) Selected destination name, 2) Detailed explanation of why it was chosen, 3) Two alternative destination names with brief reasons.",
+              "expected_output": "A JSON object with: selected_destination (string), selection_rationale (detailed explanation), alternative_destinations (array of 2 strings with reasons), destination_overview (key facts about the selected destination)."
+            }
+          ],
+          "agents": {
+            "rag_agent": {
+              "goal": "Use destination knowledge to compare Indian travel destinations and select the best one for the traveller.",
+              "role": "Destination RAG and Selection Expert",
+              "verbose": true,
+              "backstory": "You are a seasoned Indian travel expert with deep knowledge of destinations like Munnar, Goa, Jaipur, Ooty, Pondicherry, and Manali. You evaluate destinations against traveller budgets, interests, weather seasons, and travel convenience to make the perfect recommendation.",
+              "llm": "gemini/gemini-1.5-flash"
+            }
+          },
+          "inputs": {
+            "travel_profile": "${outputs.trip_intake.raw}"
+          },
+          "verbose": true
+        }
+      },
+      "start": false,
+      "listen": "trip_intake",
+      "router": false,
+      "description": "Queries the FAISS knowledge base to retrieve and compare Indian destinations, then selects the best match with alternatives and written explanation."
+    },
+    "post_replan_itinerary": {
+      "do": {
+        "call": "crew",
+        "with": {
+          "tasks": [
+            {
+              "name": "plan_revised_itinerary",
+              "agent": "itinerary_agent",
+              "description": "Create a day-by-day itinerary using the REVISED budget plan after replanning: {revised_budget}. Travel profile: {travel_profile}. Destination: {destination_info}. Logistics options: {logistics}. The plan has undergone {replanning_attempts} replanning round(s) — some activities or hotels may have been downgraded or removed. Clearly flag any such changes. For each day: morning activity (duration + cost), afternoon activity (duration + cost), evening activity or dinner, restaurant recommendation, local transport, daily total cost, and backup indoor activity.",
+              "expected_output": "A complete day-wise itinerary JSON array of DayPlan objects with the same structure as the standard plan, plus a replanning_notes field listing what was changed from the original plan."
+            },
+            {
+              "name": "add_revised_local_insights",
+              "agent": "itinerary_agent",
+              "description": "Add practical local insights for the destination: must-try food, cultural tips, safety notes, crowd avoidance, transport tips, emergency contacts, and a packing list. Also include a brief note on the budget adjustments made and why.",
+              "expected_output": "A LocalInsights JSON object including must_try_food, cultural_tips, safety_notes, transport_tips, emergency_contacts, packing_list, and a budget_adjustment_summary."
+            }
+          ],
+          "agents": {
+            "itinerary_agent": {
+              "goal": "Create a detailed, practical, and enjoyable day-by-day travel itinerary tailored to the traveller's interests and the revised budget plan.",
+              "role": "Expert Itinerary Planning Specialist",
+              "verbose": true,
+              "backstory": "You are a seasoned travel itinerary designer with intimate knowledge of Indian destinations. After budget adjustments have been made, you craft the best possible itinerary within the confirmed financial envelope, clearly noting any activities that were removed or downgraded during replanning.",
+              "llm": "gemini/gemini-1.5-flash"
+            }
+          },
+          "inputs": {
+            "logistics": "${outputs.flight_hotel_search.raw}",
+            "revised_budget": "${outputs.replan_budget_check.raw}",
+            "travel_profile": "${outputs.trip_intake.raw}",
+            "destination_info": "${outputs.destination_selection.raw}",
+            "replanning_attempts": "${state.replanning_attempts}"
+          },
+          "verbose": true
+        }
+      },
+      "start": false,
+      "listen": "replan_budget_check",
+      "router": false,
+      "description": "Generates the itinerary after the replanning path has resolved, using the best available budget plan (which may still show a minor overage if max attempts were hit)."
+    },
+    "supervisor_validation": {
+      "do": {
+        "call": "agent",
+        "with": {
+          "goal": "Validate the complete travel plan against all original requirements and ensure every customer need is satisfied before the plan is finalized.",
+          "role": "Travel Plan Supervisor and Quality Controller",
+          "input": "Perform a comprehensive quality check on the complete travel plan.\n\nOriginal travel profile: ${outputs.trip_intake.raw}\nSelected destination and rationale: ${outputs.destination_selection.raw}\nFlight and hotel options: ${outputs.flight_hotel_search.raw}\nBudget plan: ${outputs.budget_optimization.raw}\nDay-wise itinerary: ${outputs.itinerary_planning.raw}\nReplanning attempts so far: ${state.replanning_attempts}\n\nCheck all of the following:\n1. Does the destination match the traveller's interests and budget?\n2. Are flights/transport within the stated transport preference?\n3. Does the hotel match the preferred hotel type?\n4. Is the total cost within or acceptably close to the budget?\n5. Does the itinerary cover the full travel dates?\n6. Are all stated interests addressed in activities?\n7. Are additional requirements satisfied?\n8. Is the budget breakdown realistic and complete?\n\nReturn a SupervisorValidation JSON with: validation_status ('APPROVED' or 'NEEDS_REVISION'), passed_checks (array), failed_checks (array), issues_found (array of specific problems), and recommendation (string).\n\nExpected output: A SupervisorValidation JSON with: validation_status ('APPROVED' or 'NEEDS_REVISION'), passed_checks (array of strings), failed_checks (array of strings), issues_found (array of specific problem descriptions), and recommendation (a concise string explaining the decision and any required actions).",
+          "verbose": true,
+          "backstory": "You are a senior travel operations supervisor with decades of experience reviewing travel plans. You meticulously cross-check every element of a proposed plan against the traveller's stated requirements, flagging any gaps, inconsistencies, or unmet needs, and deciding whether to approve the plan or send it back for revision.",
+          "llm": "gemini/gemini-1.5-flash"
+        }
+      },
+      "start": false,
+      "listen": "itinerary_planning",
+      "router": false,
+      "description": "Supervisor reviews the complete plan against all original requirements and produces a validation verdict (APPROVED or NEEDS_REVISION)."
+    },
+    "final_supervisor_check": {
+      "do": {
+        "call": "agent",
+        "with": {
+          "goal": "Perform a final review of the revised travel plan and issue a sign-off, noting any remaining concerns.",
+          "role": "Travel Plan Supervisor and Quality Controller",
+          "input": "Perform a final validation after itinerary revisions have been applied.\n\nRevised itinerary and compliance check: ${outputs.supervisor_replan_itinerary.raw}\nRevised budget plan: ${outputs.supervisor_replan_budget.raw}\nOriginal travel profile: ${outputs.trip_intake.raw}\nTotal replanning attempts: ${state.replanning_attempts}\n\nAssess whether the revised plan now satisfies all original requirements. If it does, issue FINAL_APPROVED. If max attempts (3) have been reached, issue FINAL_APPROVED with a warnings list of any remaining concerns. Otherwise issue NEEDS_FURTHER_REVISION with specific remaining issues. Return a FinalSupervisorDecision JSON.\n\nExpected output: A FinalSupervisorDecision JSON with: final_status ('FINAL_APPROVED' or 'NEEDS_FURTHER_REVISION'), all_requirements_met (boolean), remaining_concerns (array, empty if fully approved), and sign_off_notes (string).",
+          "verbose": true,
+          "backstory": "You are the final authority on travel plan quality. After revisions have been made, you assess whether all original requirements are now met and issue your final approval — or, if max replanning attempts have been reached, you note remaining concerns and approve the best available plan to proceed.",
+          "llm": "gemini/gemini-1.5-flash"
+        }
+      },
+      "start": false,
+      "listen": "supervisor_replan_itinerary",
+      "router": false,
+      "description": "Final supervisor sign-off after the itinerary has been revised per supervisor feedback. Proceeds to report regardless — either with the approved plan or the best available plan if max attempts are reached."
+    },
+    "supervisor_replan_budget": {
+      "do": {
+        "call": "agent",
+        "with": {
+          "goal": "Re-optimize the travel budget based on supervisor feedback to address any identified issues with the plan.",
+          "role": "Budget Optimization Specialist",
+          "input": "The travel plan failed supervisor validation. Please re-optimize the budget based on the following supervisor feedback:\n\nSupervisor validation result: ${outputs.supervisor_validation.raw}\nOriginal budget plan: ${outputs.budget_optimization.raw}\nFlight and hotel options: ${outputs.flight_hotel_search.raw}\nTravel profile: ${outputs.trip_intake.raw}\nReplanning attempt: ${state.replanning_attempts}\n\nAddress each issue_found from the supervisor validation. Reallocate budget categories as needed. If cost issues are the problem, apply cost reductions: remove optional activities first, then downgrade hotel, then find cheaper transport. Return a revised BudgetPlan JSON with all corrections applied.\n\nExpected output: A revised BudgetPlan JSON with updated allocations, new total_estimated_cost, budget_status, changes_made (list), and supervisor_issues_addressed (list of how each supervisor concern was resolved).",
+          "verbose": true,
+          "backstory": "You are a senior travel finance expert who revises budget plans when quality issues are identified. You address the specific failures flagged by the supervisor and produce a corrected budget allocation that better matches the traveller's requirements.",
+          "llm": "gemini/gemini-1.5-flash"
+        }
+      },
+      "start": false,
+      "listen": "supervisor_replan",
+      "router": false,
+      "description": "Re-runs budget optimization based on supervisor feedback when the plan did not pass validation and replanning attempts remain."
+    },
+    "supervisor_replan_itinerary": {
+      "do": {
+        "call": "crew",
+        "with": {
+          "tasks": [
+            {
+              "name": "revise_itinerary",
+              "agent": "itinerary_agent",
+              "description": "Revise the day-by-day itinerary based on supervisor feedback: {supervisor_feedback}. Use the corrected budget: {revised_budget}. Original itinerary: {original_itinerary}. Travel profile: {travel_profile}. Address each issue_found from the supervisor validation. Return the complete revised itinerary as a DayPlan JSON array with revision_notes explaining each change made.",
+              "expected_output": "A revised DayPlan JSON array with all supervisor issues addressed, plus revision_notes listing each change made and which supervisor concern it resolves."
+            },
+            {
+              "name": "verify_revisions",
+              "agent": "recheck_agent",
+              "description": "Cross-check the revised itinerary against the supervisor's issues_found list: {supervisor_feedback}. Confirm each issue is now resolved. If any issue remains unresolved, flag it with a recommendation. Return a compliance_check JSON.",
+              "expected_output": "A compliance_check JSON with: issues_resolved (array), issues_remaining (array, ideally empty), and overall_compliance ('COMPLIANT' or 'PARTIAL')."
+            }
+          ],
+          "agents": {
+            "recheck_agent": {
+              "goal": "Verify the revised itinerary addresses all supervisor concerns and confirm it meets all original requirements.",
+              "role": "Itinerary Compliance Checker",
+              "verbose": true,
+              "backstory": "You are a meticulous travel plan reviewer who ensures every revision actually resolves the identified issues before the plan moves forward.",
+              "llm": "gemini/gemini-1.5-flash"
+            },
+            "itinerary_agent": {
+              "goal": "Revise the day-by-day itinerary to address supervisor-identified issues and align with the corrected budget plan.",
+              "role": "Expert Itinerary Planning Specialist",
+              "verbose": true,
+              "backstory": "You are a seasoned travel itinerary designer who revises and improves plans based on quality review feedback. You make targeted changes to address specific issues while preserving as much of the original itinerary experience as possible.",
+              "llm": "gemini/gemini-1.5-flash"
+            }
+          },
+          "inputs": {
+            "revised_budget": "${outputs.supervisor_replan_budget.raw}",
+            "travel_profile": "${outputs.trip_intake.raw}",
+            "original_itinerary": "${outputs.itinerary_planning.raw}",
+            "supervisor_feedback": "${outputs.supervisor_validation.raw}"
+          },
+          "verbose": true
+        }
+      },
+      "start": false,
+      "listen": "supervisor_replan_budget",
+      "router": false,
+      "description": "Re-generates the itinerary after supervisor-requested budget corrections, then feeds back into supervisor validation."
+    },
+    "increment_replanning_attempts": {
+      "do": {
+        "call": "expression",
+        "expr": "state.replanning_attempts + 1"
+      },
+      "start": false,
+      "listen": "replan_budget",
+      "router": false,
+      "description": "Increments the replanning counter and routes back to budget optimization with the revised plan."
+    }
+  },
+  "description": "An AI-powered travel planning flow that collects user preferences, autonomously selects destinations via FAISS RAG, searches flights and hotels, optimizes the budget, plans a day-wise itinerary, validates the plan, compiles a report, and handles human approval before simulating booking — with automatic replanning if the budget is exceeded."
+}

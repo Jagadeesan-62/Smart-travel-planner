@@ -1,0 +1,232 @@
+{
+  "tamil_nadu": {
+    "0": {
+      "place_id": "43942e060041c2c3",
+      "section": "overview_and_importance"
+    },
+    "1": {
+      "place_id": "43942e060041c2c3",
+      "section": "attractions_and_activities"
+    },
+    "2": {
+      "place_id": "43942e060041c2c3",
+      "section": "weather_and_best_time"
+    },
+    "3": {
+      "place_id": "43942e060041c2c3",
+      "section": "transport_and_accessibility"
+    },
+    "4": {
+      "place_id": "43942e060041c2c3",
+      "section": "accommodation_and_food"
+    },
+    "5": {
+      "place_id": "43942e060041c2c3",
+      "section": "budget_and_entry"
+    },
+    "6": {
+      "place_id": "43942e060041c2c3",
+      "section": "safety_and_permits"
+    },
+    "7": {
+      "place_id": "43942e060041c2c3",
+      "section": "nearby_places"
+    },
+    "8": {
+      "place_id": "9686f41418272abd",
+      "section": "overview_and_importance"
+    },
+    "9": {
+      "place_id": "9686f41418272abd",
+      "section": "attractions_and_activities"
+    },
+    "10": {
+      "place_id": "9686f41418272abd",
+      "section": "weather_and_best_time"
+    },
+    "11": {
+      "place_id": "9686f41418272abd",
+      "section": "transport_and_accessibility"
+    },
+    "12": {
+      "place_id": "9686f41418272abd",
+      "section": "accommodation_and_food"
+    },
+    "13": {
+      "place_id": "9686f41418272abd",
+      "section": "budget_and_entry"
+    },
+    "14": {
+      "place_id": "9686f41418272abd",
+      "section": "safety_and_permits"
+    },
+    "15": {
+      "place_id": "9686f41418272abd",
+      "section": "nearby_places"
+    },
+    "16": {
+      "place_id": "e89d75728e6d2380",
+      "section": "overview_and_importance"
+    },
+    "17": {
+      "place_id": "e89d75728e6d2380",
+      "section": "attractions_and_activities"
+    },
+    "18": {
+      "place_id": "e89d75728e6d2380",
+      "section": "weather_and_best_time"
+    },
+    "19": {
+      "place_id": "e89d75728e6d2380",
+      "section": "transport_and_accessibility"
+    },
+    "20": {
+      "place_id": "e89d75728e6d2380",
+      "section": "accommodation_and_food"
+    },
+    "21": {
+      "place_id": "e89d75728e6d2380",
+      "section": "budget_and_entry"
+    },
+    "22": {
+      "place_id": "e89d75728e6d2380",
+      "section": "safety_and_permits"
+    },
+    "23": {
+      "place_id": "e89d75728e6d2380",
+      "section": "nearby_places"
+    }
+  },
+  "india": {
+    "0": {
+      "place_id": "8b9fbb071f2f1f0f",
+      "section": "overview_and_importance"
+    },
+    "1": {
+      "place_id": "8b9fbb071f2f1f0f",
+      "section": "attractions_and_activities"
+    },
+    "2": {
+      "place_id": "8b9fbb071f2f1f0f",
+      "section": "weather_and_best_time"
+    },
+    "3": {
+      "place_id": "8b9fbb071f2f1f0f",
+      "section": "transport_and_accessibility"
+    },
+    "4": {
+      "place_id": "8b9fbb071f2f1f0f",
+      "section": "accommodation_and_food"
+    },
+    "5": {
+      "place_id": "8b9fbb071f2f1f0f",
+      "section": "budget_and_entry"
+    },
+    "6": {
+      "place_id": "8b9fbb071f2f1f0f",
+      "section": "safety_and_permits"
+    },
+    "7": {
+      "place_id": "8b9fbb071f2f1f0f",
+      "section": "nearby_places"
+    },
+    "8": {
+      "place_id": "fe0e3196c9f5370b",
+      "section": "overview_and_importance"
+    },
+    "9": {
+      "place_id": "fe0e3196c9f5370b",
+      "section": "attractions_and_activities"
+    },
+    "10": {
+      "place_id": "fe0e3196c9f5370b",
+      "section": "weather_and_best_time"
+    },
+    "11": {
+      "place_id": "fe0e3196c9f5370b",
+      "section": "transport_and_accessibility"
+    },
+    "12": {
+      "place_id": "fe0e3196c9f5370b",
+      "section": "accommodation_and_food"
+    },
+    "13": {
+      "place_id": "fe0e3196c9f5370b",
+      "section": "budget_and_entry"
+    },
+    "14": {
+      "place_id": "fe0e3196c9f5370b",
+      "section": "safety_and_permits"
+    },
+    "15": {
+      "place_id": "fe0e3196c9f5370b",
+      "section": "nearby_places"
+    }
+  },
+  "world": {
+    "0": {
+      "place_id": "bcc46111e7aff5ad",
+      "section": "overview_and_importance"
+    },
+    "1": {
+      "place_id": "bcc46111e7aff5ad",
+      "section": "attractions_and_activities"
+    },
+    "2": {
+      "place_id": "bcc46111e7aff5ad",
+      "section": "weather_and_best_time"
+    },
+    "3": {
+      "place_id": "bcc46111e7aff5ad",
+      "section": "transport_and_accessibility"
+    },
+    "4": {
+      "place_id": "bcc46111e7aff5ad",
+      "section": "accommodation_and_food"
+    },
+    "5": {
+      "place_id": "bcc46111e7aff5ad",
+      "section": "budget_and_entry"
+    },
+    "6": {
+      "place_id": "bcc46111e7aff5ad",
+      "section": "safety_and_permits"
+    },
+    "7": {
+      "place_id": "bcc46111e7aff5ad",
+      "section": "nearby_places"
+    },
+    "8": {
+      "place_id": "ad3f0e5a9488cf6f",
+      "section": "overview_and_importance"
+    },
+    "9": {
+      "place_id": "ad3f0e5a9488cf6f",
+      "section": "attractions_and_activities"
+    },
+    "10": {
+      "place_id": "ad3f0e5a9488cf6f",
+      "section": "weather_and_best_time"
+    },
+    "11": {
+      "place_id": "ad3f0e5a9488cf6f",
+      "section": "transport_and_accessibility"
+    },
+    "12": {
+      "place_id": "ad3f0e5a9488cf6f",
+      "section": "accommodation_and_food"
+    },
+    "13": {
+      "place_id": "ad3f0e5a9488cf6f",
+      "section": "budget_and_entry"
+    },
+    "14": {
+      "place_id": "ad3f0e5a9488cf6f",
+      "section": "safety_and_permits"
+    },
+    "15": {
+      "place_id": "ad3f0e5a9488cf6f",
+      "section": "nearby_places"
+    }
+  }
+}

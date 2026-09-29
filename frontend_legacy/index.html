@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AI Smart Travel Planner powered by CrewAI Flows. Get personalized itineraries, optimized budgets, flight searches, and hotel selections.">
+    <title>AI Smart Travel Planner - CrewAI Agent Flow</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js for beautiful charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Flatpickr for beautiful date selection -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
+    <!-- html2pdf & jsPDF for Robust Client-Side PDF Generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- Marked.js for Markdown Rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/frontend/style.css?v=6.0">
+</head>
+<body>
+    <div class="glass-bg-decor decor-1"></div>
+    <div class="glass-bg-decor decor-2"></div>
+    <div class="glass-bg-decor decor-3"></div>
+
+    <div class="app-container">
+        <!-- HEADER -->
+        <header class="app-header">
+            <div class="logo">
+                <i class="fa-solid fa-compass-drafting logo-icon"></i>
+                <span class="logo-text">Smart<span class="logo-accent">Travel</span></span>
+            </div>
+            <div class="badge">
+                <span class="badge-dot"></span>
+                <span>CrewAI Flow Active</span>
+            </div>
+        </header>
+
+        <!-- MAIN LAYOUT -->
+        <main class="app-main">
+            <!-- INPUT PANEL (LEFT) -->
+            <section class="panel-card input-panel" id="input-section">
+                <div class="panel-header">
+                    <h2>Plan Your Adventure</h2>
+                    <p>Customize your preferences and let our multi-agent crew design the perfect trip.</p>
+                </div>
+                
+                <form id="planning-form" class="planning-form">
+                    <div class="form-row">
+                        <div class="form-group col-6">
+                            <label for="starting_location"><i class="fa-solid fa-location-arrow"></i> Starting Location</label>
+                            <input type="text" id="starting_location" name="starting_location" placeholder="e.g., Delhi, Mumbai" required>
+                        </div>
+                        <div class="form-group col-6">
+                            <div class="label-with-toggle">
+                                <label for="destination"><i class="fa-solid fa-location-dot"></i> Destination</label>
+                                <div class="toggle-container">
+                                    <input type="checkbox" id="ai_choose_destination" name="ai_choose_destination" class="toggle-input">
+                                    <label for="ai_choose_destination" class="toggle-label">AI Choose</label>
+                                </div>
+                            </div>
+                            <input type="text" id="destination" name="destination" placeholder="e.g., Goa, Munnar, Manali">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group col-12">
+                            <label><i class="fa-solid fa-globe"></i> Trip Type</label>
+                            <select id="trip_type" name="trip_type" required>
+                                <option value="Domestic" selected>Domestic</option>
+                                <option value="International">International</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group col-6">
+                            <label for="date_range_picker"><i class="fa-solid fa-calendar-days"></i> Travel Dates</label>
+                            <input type="text" id="date_range_picker" placeholder="Select Travel Dates (Start to End)" required>
+                            <input type="hidden" id="start_date" name="start_date">
+                            <input type="hidden" id="end_date" name="end_date">
+                            <input type="hidden" id="travel_dates" name="travel_dates">
+                        </div>
+                        <div class="form-group col-6">
+                            <label for="num_travellers"><i class="fa-solid fa-users"></i> Number of Travellers</label>
+                            <input type="number" id="num_travellers" name="num_travellers" min="1" max="20" value="1" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="total_budget_slider"><i class="fa-solid fa-indian-rupee-sign"></i> Total Budget</label>
+                        <div class="budget-control-wrapper" style="display: flex; gap: 15px; align-items: center; margin-bottom: 5px;">
+                            <input type="range" id="total_budget_slider" name="total_budget_slider" min="1000" max="500000" step="1000" value="60000" class="budget-slider" style="flex: 1;">
+                            <div class="budget-input-group" style="position: relative; width: 130px;">
+                                <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-secondary); font-weight: 600;">₹</span>
+                                <input type="number" id="total_budget_input" name="total_budget_input" min="1000" max="500000" step="1000" value="60000" style="width: 100%; padding-left: 28px; margin: 0; background-color: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); border-radius: 0.65rem; color: var(--text-primary); padding-top: 0.75rem; padding-bottom: 0.75rem; font-family: var(--font-body); font-size: 0.95rem;">
+                            </div>
+                        </div>
+                        <input type="hidden" id="total_budget" name="total_budget" value="60000">
+                        <div class="slider-marks">
+                            <span>1K</span>
+                            <span>250K</span>
+                            <span>500K</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label><i class="fa-solid fa-heart"></i> Core Interests</label>
+                        <div class="interest-chips" id="interest-chips-container">
+                            <button type="button" class="chip active" data-value="Nature"><i class="fa-solid fa-tree"></i> Nature</button>
+                            <button type="button" class="chip" data-value="Beaches"><i class="fa-solid fa-umbrella-beach"></i> Beaches</button>
+                            <button type="button" class="chip" data-value="Culture"><i class="fa-solid fa-landmark"></i> Culture</button>
+                            <button type="button" class="chip" data-value="Adventure"><i class="fa-solid fa-person-hiking"></i> Adventure</button>
+                            <button type="button" class="chip" data-value="Food"><i class="fa-solid fa-utensils"></i> Food</button>
+                            <button type="button" class="chip" data-value="Shopping"><i class="fa-solid fa-bag-shopping"></i> Shopping</button>
+                        </div>
+                        <input type="hidden" id="interests" name="interests" value="Nature">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group col-6">
+                            <label for="hotel_type"><i class="fa-solid fa-hotel"></i> Accommodation Style</label>
+                            <select id="hotel_type" name="hotel_type" required>
+                                <option value="Budget">Budget (Hostels & Homestays)</option>
+                                <option value="Mid-range" selected>Mid-range (3-Star & Boutique)</option>
+                                <option value="Luxury">Luxury (5-Star & Resorts)</option>
+                            </select>
+                        </div>
+                        <div class="form-group col-6">
+                            <label for="transport_preferences"><i class="fa-solid fa-plane"></i> Transport Mode</label>
+                            <select id="transport_preferences" name="transport_preferences" required>
+                                <option value="Flight" selected>Flight (Fastest & Convenient)</option>
+                                <option value="Train">Train (Scenic & Budget-friendly)</option>
+                                <option value="Cab">Cab / Car Rental (Self-paced)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="additional_requirements"><i class="fa-solid fa-clipboard-list"></i> Special Requirements / Requests</label>
+                        <textarea id="additional_requirements" name="additional_requirements" placeholder="e.g., Vegetarian restaurants nearby, elderly-friendly travel pace, early morning check-in..."></textarea>
+                    </div>
+
+                    <button type="submit" class="submit-btn" id="submit-button">
+                        <span>Begin Agent Kickoff</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </form>
+            </section>
+
+            <!-- WORKFLOW TRACKING PANEL (RIGHT / ACTIVE STATE) -->
+            <section class="panel-card workflow-panel hidden" id="workflow-section">
+                <div class="panel-header">
+                    <h2>Workflow Execution</h2>
+                    <p>Track the CrewAI agents in real-time as they process, plan, validate, and compile your itinerary.</p>
+                </div>
+
+                <div class="workflow-board">
+                    <div class="workflow-steps">
+                        <div class="step-card" id="step-trip_intake">
+                            <div class="step-status"><i class="fa-solid fa-circle-notch fa-spin"></i></div>
+                            <div class="step-details">
+                                <h3>Trip Intake</h3>
+                                <p>intake_agent (Validation)</p>
+                            </div>
+                        </div>
+                        <div class="step-card" id="step-destination_selection">
+                            <div class="step-status"><i class="fa-solid fa-circle"></i></div>
+                            <div class="step-details">
+                                <h3>Destination RAG</h3>
+                                <p>rag_agent (Knowledge Search)</p>
+                            </div>
+                        </div>
+                        <div class="step-card" id="step-flight_hotel_search">
+                            <div class="step-status"><i class="fa-solid fa-circle"></i></div>
+                            <div class="step-details">
+                                <h3>Logistics Search</h3>
+                                <p>logistics_agent (Mock APIs)</p>
+                            </div>
+                        </div>
+                        <div class="step-card" id="step-budget_optimization">
+                            <div class="step-status"><i class="fa-solid fa-circle"></i></div>
+                            <div class="step-details">
+                                <h3>Budget Analysis</h3>
+                                <p>budget_agent (Optimization)</p>
+                            </div>
+                        </div>
+                        <div class="step-card" id="step-replan_budget">
+                            <div class="step-status"><i class="fa-solid fa-circle"></i></div>
+                            <div class="step-details">
+                                <h3>Replanning Loop</h3>
+                                <p>replan_agent (Cost Cutters)</p>
+                            </div>
+                        </div>
+                        <div class="step-card" id="step-itinerary_planning">
+                            <div class="step-status"><i class="fa-solid fa-circle"></i></div>
+                            <div class="step-details">
+                                <h3>Itinerary Drafting</h3>
+                                <p>itinerary_agent (Day plans)</p>
+                            </div>
+                        </div>
+                        <div class="step-card" id="step-supervisor_validation">
+                            <div class="step-status"><i class="fa-solid fa-circle"></i></div>
+                            <div class="step-details">
+                                <h3>QA Supervisor</h3>
+                                <p>supervisor_agent (Validation)</p>
+                            </div>
+                        </div>
+                        <div class="step-card" id="step-report_compilation">
+                            <div class="step-status"><i class="fa-solid fa-circle"></i></div>
+                            <div class="step-details">
+                                <h3>Report Assembly</h3>
+                                <p>report_agent (Formatting)</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="terminal-logs">
+                        <div class="terminal-header">
+                            <div class="term-dots">
+                                <span class="term-dot dot-red"></span>
+                                <span class="term-dot dot-yellow"></span>
+                                <span class="term-dot dot-green"></span>
+                            </div>
+                            <span class="term-title">smart_travel_planner_flow.log</span>
+                        </div>
+                        <div class="terminal-body" id="terminal-body">
+                            <!-- Terminal messages will load here -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 1. PLAN REVIEW & HUMAN APPROVAL PAGE -->
+            <section class="panel-card review-panel hidden" id="review-plan-section">
+                <div class="panel-header">
+                    <div class="badge-tag"><i class="fa-solid fa-user-check"></i> Human Approval Required</div>
+                    <h2 id="review-destination-title">Review Generated Travel Plan</h2>
+                    <p>Review the AI-generated route, accommodation, and budget optimization before proceeding to passenger booking.</p>
+                </div>
+
+                <div class="review-summary-grid">
+                    <div class="review-card">
+                        <div class="rev-icon"><i class="fa-solid fa-location-dot"></i></div>
+                        <div class="rev-info">
+                            <span class="rev-label">Destination</span>
+                            <h3 id="review-dest-name">Munnar</h3>
+                            <span class="rev-sub" id="review-dates-text">Dates</span>
+                        </div>
+                    </div>
+                    <div class="review-card">
+                        <div class="rev-icon"><i class="fa-solid fa-route" id="review-transport-icon"></i></div>
+                        <div class="rev-info">
+                            <span class="rev-label">Transit / Carrier</span>
+                            <h3 id="review-flight-name">Express Transit</h3>
+                            <span class="rev-sub" id="review-flight-cost">INR 11,000</span>
+                        </div>
+                    </div>
+                    <div class="review-card">
+                        <div class="rev-icon"><i class="fa-solid fa-hotel"></i></div>
+                        <div class="rev-info">
+                            <span class="rev-label">Accommodation</span>
+                            <h3 id="review-hotel-name">Tea Valley Resort</h3>
+                            <span class="rev-sub" id="review-hotel-cost">INR 12,600</span>
+                        </div>
+                    </div>
+                    <div class="review-card highlight">
+                        <div class="rev-icon"><i class="fa-solid fa-wallet"></i></div>
+                        <div class="rev-info">
+                            <span class="rev-label">Total Estimated Budget</span>
+                            <h3 id="review-total-cost">INR 48,500</h3>
+                            <span class="rev-sub" id="review-budget-status">Within Target Limit</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="review-actions">
+                    <button type="button" class="btn btn-secondary" id="btn-review-back-to-input"><i class="fa-solid fa-arrow-left"></i> Adjust Preferences</button>
+                    <button type="button" class="btn btn-primary btn-lg" id="btn-continue-to-booking"><span>Continue to Booking</span> <i class="fa-solid fa-arrow-right"></i></button>
+                </div>
+            </section>
+
+            <!-- 2. PASSENGER & BOOKING DETAILS PAGE -->
+            <section class="panel-card passenger-panel hidden" id="passenger-section">
+                <div class="panel-header">
+                    <div class="badge-tag"><i class="fa-solid fa-id-card"></i> Step 2 of 4: Booking Details</div>
+                    <h2>Passenger & Mock Booking Details</h2>
+                    <p>Provide passenger information and dummy payment credentials to execute the mock booking.</p>
+                </div>
+
+                <form id="passenger-booking-form" class="passenger-form">
+                    <!-- Primary Contact Information -->
+                    <div class="form-section-box">
+                        <h3 class="section-subtitle"><i class="fa-solid fa-address-book"></i> Primary Contact Information</h3>
+                        <div class="form-row">
+                            <div class="form-group col-4">
+                                <label for="contact_name">Full Name</label>
+                                <div class="input-icon-wrap">
+                                    <i class="fa-solid fa-user field-icon"></i>
+                                    <input type="text" id="contact_name" name="contact_name" placeholder="e.g., Alex Johnson" required>
+                                </div>
+                            </div>
+                            <div class="form-group col-4">
+                                <label for="contact_email">Email Address</label>
+                                <div class="input-icon-wrap">
+                                    <i class="fa-solid fa-envelope field-icon"></i>
+                                    <input type="email" id="contact_email" name="contact_email" placeholder="alex.johnson@example.com" required>
+                                </div>
+                            </div>
+                            <div class="form-group col-4">
+                                <label for="contact_phone">Phone Number</label>
+                                <div class="input-icon-wrap">
+                                    <i class="fa-solid fa-phone field-icon"></i>
+                                    <input type="tel" id="contact_phone" name="contact_phone" placeholder="+91 98765 43210" required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dynamic Traveller Details (Generated dynamically for N travellers) -->
+                    <div class="form-section-box">
+                        <div class="travellers-header">
+                            <h3 class="section-subtitle"><i class="fa-solid fa-users"></i> Traveller Information</h3>
+                            <span class="badge-pill" id="traveller-count-badge">1 Traveller</span>
+                        </div>
+                        <div id="dynamic-travellers-container" class="travellers-grid">
+                            <!-- Injected dynamically via JS based on num_travellers -->
+                        </div>
+                    </div>
+
+                    <!-- Mock Payment Details -->
+                    <div class="form-section-box mock-payment-box">
+                        <h3 class="section-subtitle"><i class="fa-solid fa-credit-card"></i> Mock Payment Details</h3>
+                        <div class="mock-payment-banner">
+                            <i class="fa-solid fa-shield-halved"></i>
+                            <div>
+                                <strong>Demo Booking Notice</strong>
+                                <p>Demo Booking – No real payment will be processed. Dummy data only.</p>
+                            </div>
+                        </div>
+
+                        <div class="mock-payment-grid">
+                            <!-- Visual Card Preview -->
+                            <div class="mock-card-visual">
+                                <div class="virtual-card">
+                                    <div class="vc-top">
+                                        <div class="vc-chip"><i class="fa-solid fa-microchip"></i></div>
+                                        <div class="vc-brand"><i class="fa-brands fa-cc-visa"></i> DEMO</div>
+                                    </div>
+                                    <div class="vc-number" id="vc-display-number">4532 •••• •••• 8821</div>
+                                    <div class="vc-bottom">
+                                        <div class="vc-holder">
+                                            <span class="vc-lbl">CARDHOLDER</span>
+                                            <span class="vc-val" id="vc-display-holder">Alex Johnson</span>
+                                        </div>
+                                        <div class="vc-expiry">
+                                            <span class="vc-lbl">EXPIRES</span>
+                                            <span class="vc-val" id="vc-display-expiry">12/28</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Payment Form Fields -->
+                            <div class="mock-card-inputs">
+                                <div class="form-row">
+                                    <div class="form-group col-12">
+                                        <label for="mock_cardholder">Cardholder Name</label>
+                                        <div class="input-icon-wrap">
+                                            <i class="fa-solid fa-user field-icon"></i>
+                                            <input type="text" id="mock_cardholder" value="Alex Johnson" placeholder="Cardholder Name" required>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group col-12">
+                                        <label for="mock_cardnum">Mock Card Number</label>
+                                        <div class="input-icon-wrap">
+                                            <i class="fa-solid fa-credit-card field-icon"></i>
+                                            <input type="text" id="mock_cardnum" value="4532 8901 2345 8821" placeholder="4532 0000 0000 8821" required>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group col-6">
+                                        <label for="mock_expiry">Expiry Date (MM/YY)</label>
+                                        <div class="input-icon-wrap">
+                                            <i class="fa-solid fa-calendar-days field-icon"></i>
+                                            <input type="text" id="mock_expiry" value="12/28" placeholder="MM/YY" maxlength="5" required>
+                                        </div>
+                                    </div>
+                                    <div class="form-group col-6">
+                                        <label for="mock_cvv">CVV (Demo)</label>
+                                        <div class="input-icon-wrap">
+                                            <i class="fa-solid fa-lock field-icon"></i>
+                                            <input type="password" id="mock_cvv" value="888" maxlength="4" placeholder="888" required>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions-row">
+                        <button type="button" class="btn btn-secondary" id="btn-back-to-review"><i class="fa-solid fa-arrow-left"></i> Back to Review</button>
+                        <button type="submit" class="btn btn-primary btn-lg" id="btn-confirm-mock-booking">
+                            <i class="fa-solid fa-lock"></i> Confirm Mock Booking
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- 3. MOCK BOOKING CONFIRMATION PAGE -->
+            <section class="panel-card confirmation-panel hidden" id="confirmation-section">
+                <div class="confirmation-hero">
+                    <div class="conf-icon-glow"><i class="fa-solid fa-circle-check"></i></div>
+                    <h2>Booking Confirmed</h2>
+                    <p class="conf-hero-sub">The Mock Booking Agent has confirmed your travel transport and accommodation reservations.</p>
+                    <div class="badge-pill conf-status-badge"><i class="fa-solid fa-shield-halved"></i> Demo Payment Successful</div>
+                </div>
+
+                <div class="booking-cards-grid">
+                    <!-- Transport Booking Card (Flight / Train / Bus / Cab) -->
+                    <div class="conf-booking-card" id="conf-flight-card">
+                        <div class="conf-card-header">
+                            <div class="conf-card-title">
+                                <i class="fa-solid fa-route" id="conf-transport-icon"></i>
+                                <div>
+                                    <h4 id="conf-transport-title">Transport Booking</h4>
+                                    <span class="pnr-badge" id="conf-flight-pnr">TRP-2026-XXXXX</span>
+                                </div>
+                            </div>
+                            <span class="conf-status-tag">Confirmed</span>
+                        </div>
+                        <div class="conf-card-body">
+                            <div class="conf-route-row">
+                                <div>
+                                    <span class="conf-city-lbl" id="conf-flight-from">Origin</span>
+                                    <span class="conf-time-val" id="conf-flight-dept-time">08:00</span>
+                                </div>
+                                <div class="conf-route-arrow">
+                                    <span id="conf-flight-airline">Operator / Service</span>
+                                    <i class="fa-solid fa-arrow-right-long" id="conf-route-arrow-icon"></i>
+                                    <span id="conf-flight-num">Service No</span>
+                                </div>
+                                <div>
+                                    <span class="conf-city-lbl" id="conf-flight-to">Destination</span>
+                                    <span class="conf-time-val" id="conf-flight-arr-time">11:30</span>
+                                </div>
+                            </div>
+                            <div class="conf-meta-row">
+                                <span><i class="fa-solid fa-calendar"></i> <span id="conf-flight-date">Oct 15, 2026</span></span>
+                                <span><i class="fa-solid fa-users"></i> <span id="conf-flight-pax">2 Pax</span></span>
+                                <span class="conf-price" id="conf-flight-price">INR 11,000</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Accommodation Booking Card (if applicable) -->
+                    <div class="conf-booking-card" id="conf-hotel-card">
+                        <div class="conf-card-header">
+                            <div class="conf-card-title">
+                                <i class="fa-solid fa-hotel"></i>
+                                <div>
+                                    <h4>Accommodation Booking</h4>
+                                    <span class="pnr-badge" id="conf-hotel-pnr">HTL-2026-XXXXX</span>
+                                </div>
+                            </div>
+                            <span class="conf-status-tag">Confirmed</span>
+                        </div>
+                        <div class="conf-card-body">
+                            <div class="conf-hotel-info">
+                                <h5 id="conf-hotel-name">Selected Resort & Spa</h5>
+                                <p id="conf-hotel-location"><i class="fa-solid fa-location-dot"></i> Central Valley</p>
+                            </div>
+                            <div class="conf-meta-row">
+                                <span><i class="fa-solid fa-calendar-check"></i> <span id="conf-hotel-dates">Oct 15 - 18, 2026</span></span>
+                                <span><i class="fa-solid fa-bed"></i> <span id="conf-hotel-rooms">1 Room, 2 Guests</span></span>
+                                <span class="conf-price" id="conf-hotel-price">INR 12,600</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Booking Meta Summary -->
+                <div class="conf-summary-card">
+                    <div class="summary-item">
+                        <span class="sum-lbl">Registered Travellers</span>
+                        <strong class="sum-val" id="conf-travellers-list">Alex Johnson, Jordan Smith</strong>
+                    </div>
+                    <div class="summary-item">
+                        <span class="sum-lbl">Booking Date</span>
+                        <strong class="sum-val" id="conf-booking-date">October 01, 2026</strong>
+                    </div>
+                    <div class="summary-item">
+                        <span class="sum-lbl">Payment Status</span>
+                        <strong class="sum-val" style="color: var(--accent-green);">Demo Payment Successful</strong>
+                    </div>
+                    <div class="summary-item total">
+                        <span class="sum-lbl">Total Booked Amount</span>
+                        <strong class="sum-val sum-total" id="conf-total-amount">INR 23,600</strong>
+                    </div>
+                </div>
+
+                <div class="conf-disclaimer-box">
+                    <i class="fa-solid fa-circle-info"></i>
+                    <span>All bookings shown in this report are mock/demo bookings and no real transaction was performed.</span>
+                </div>
+
+                <div class="conf-actions">
+                    <button type="button" class="btn btn-primary btn-lg" id="btn-generate-final-report">
+                        <i class="fa-solid fa-file-invoice"></i> Generate Final Report
+                    </button>
+                </div>
+            </section>
+
+            <!-- RESULTS DASHBOARD (FULL WIDTH ONCE READY) -->
+            <section class="panel-card dashboard-panel hidden" id="dashboard-section">
+                <div class="dashboard-header">
+                    <div class="dashboard-title-area">
+                        <h2 id="summary-destination">Exploring Munnar</h2>
+                        <div class="dashboard-sub-badges">
+                            <span class="badge-pill" id="summary-dates"><i class="fa-solid fa-calendar"></i> Oct 15-18, 2026</span>
+                            <span class="badge-pill" id="summary-pax"><i class="fa-solid fa-users"></i> 2 Pax</span>
+                            <span class="badge-pill badge-budget-status" id="summary-budget-badge"><i class="fa-solid fa-check"></i> Optimized</span>
+                        </div>
+                    </div>
+                    <div class="dashboard-actions">
+                        <button type="button" class="btn btn-secondary" id="restart-btn"><i class="fa-solid fa-rotate-left"></i> Plan New</button>
+                        <button type="button" class="btn btn-primary" id="download-btn"><i class="fa-solid fa-file-pdf"></i> Download PDF</button>
+                    </div>
+                </div>
+
+                <!-- AI TRIP OVERVIEW & EXECUTIVE BRIEF ON FINAL PAGE -->
+                <div class="dashboard-overview-card" id="dashboard-overview-card">
+                    <div class="overview-header">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        <h3>Trip Overview & AI Summary</h3>
+                    </div>
+                    <div class="overview-body">
+                        <p id="dashboard-summary-text" class="overview-text">Loading overview...</p>
+                    </div>
+                </div>
+
+                <div class="dashboard-tabs">
+                    <button class="tab-btn active" data-tab="tab-itinerary"><i class="fa-solid fa-route"></i> Day-by-Day Plan</button>
+                    <button class="tab-btn" data-tab="tab-logistics"><i class="fa-solid fa-bed"></i> Accommodation & Travel</button>
+                    <button class="tab-btn" data-tab="tab-budget"><i class="fa-solid fa-pie-chart"></i> Cost Breakdown</button>
+                    <button class="tab-btn" data-tab="tab-insights"><i class="fa-solid fa-circle-info"></i> Local Insights</button>
+                    <button class="tab-btn" data-tab="tab-raw"><i class="fa-solid fa-file-lines"></i> Full Report</button>
+                </div>
+
+                <div class="tab-content-container">
+                    <!-- ITINERARY TAB -->
+                    <div class="tab-content active" id="tab-itinerary">
+                        <div class="timeline" id="itinerary-timeline">
+                            <!-- Populated dynamically via JS -->
+                        </div>
+                    </div>
+
+                    <!-- FLIGHTS & HOTELS TAB -->
+                    <div class="tab-content" id="tab-logistics">
+                        <div class="logistics-grid">
+                            <!-- Accommodation Card -->
+                            <div class="logistics-card flex-col">
+                                <div class="logistics-header">
+                                    <div class="log-icon-wrap"><i class="fa-solid fa-hotel"></i></div>
+                                    <div>
+                                        <h3>Recommended Lodging</h3>
+                                        <p id="hotel-location">Munnar Valley</p>
+                                    </div>
+                                </div>
+                                <div class="hotel-details-body">
+                                    <h2 id="hotel-name">Panoramic Getaway</h2>
+                                    <div class="rating-stars" id="hotel-stars">
+                                        <i class="fa-solid fa-star"></i>
+                                        <i class="fa-solid fa-star"></i>
+                                        <i class="fa-solid fa-star"></i>
+                                        <i class="fa-solid fa-star"></i>
+                                        <i class="fa-solid fa-star"></i>
+                                    </div>
+                                    <div class="hotel-facilities" id="hotel-facilities">
+                                        <!-- facilities -->
+                                    </div>
+                                    <div class="info-list">
+                                        <div class="info-item">
+                                            <span class="info-label">Distance to Sightseeing:</span>
+                                            <span class="info-value" id="hotel-distance">4 km</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <span class="info-label">Cost per Night:</span>
+                                            <span class="info-value" id="hotel-price-night">INR 4,500</span>
+                                        </div>
+                                        <div class="info-item highlight">
+                                            <span class="info-label">Total Accommodation Cost:</span>
+                                            <span class="info-value" id="hotel-total-cost">INR 13,500</span>
+                                        </div>
+                                    </div>
+                                    <div class="notes-box" id="hotel-notes">
+                                        Valuable amenities, boutique service, and outstanding breakfast.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Flight Card -->
+                            <div class="logistics-card flex-col">
+                                <div class="logistics-header">
+                                    <div class="log-icon-wrap"><i class="fa-solid fa-plane"></i></div>
+                                    <div>
+                                        <h3>Recommended Transport</h3>
+                                        <p id="transport-preference">IndiGo Airways</p>
+                                    </div>
+                                </div>
+                                <div class="flight-details-body">
+                                    <div class="flight-route-display">
+                                        <div class="route-city">
+                                            <span class="city-code" id="flight-carrier">6E</span>
+                                            <span class="city-name" id="flight-class">Economy</span>
+                                        </div>
+                                        <div class="route-line-wrap">
+                                            <span class="route-duration" id="flight-duration">2h 45m</span>
+                                            <div class="route-plane-line">
+                                                <i class="fa-solid fa-plane"></i>
+                                            </div>
+                                        </div>
+                                        <div class="route-city text-right">
+                                            <span class="city-code" id="flight-times">10:30 - 13:10</span>
+                                            <span class="city-name">Direct</span>
+                                        </div>
+                                    </div>
+                                    <div class="info-list">
+                                        <div class="info-item">
+                                            <span class="info-label">Price per Person:</span>
+                                            <span class="info-value" id="flight-price-pax">INR 5,500</span>
+                                        </div>
+                                        <div class="info-item highlight">
+                                            <span class="info-label">Total Transport Cost:</span>
+                                            <span class="info-value" id="flight-total-cost">INR 11,000</span>
+                                        </div>
+                                    </div>
+                                    <div class="notes-box" id="flight-notes">
+                                        Fast transit window, checked baggage included.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- BUDGET BREAKDOWN TAB -->
+                    <div class="tab-content" id="tab-budget">
+                        <div class="budget-tab-grid">
+                            <div class="chart-wrapper">
+                                <canvas id="budgetChart"></canvas>
+                            </div>
+                            <div class="budget-totals-panel">
+                                <h3>Financial Summary</h3>
+                                <div class="large-total-display">
+                                    <span class="sub-lbl">Total Estimated Cost</span>
+                                    <h1 id="budget-total-text">INR 48,500</h1>
+                                </div>
+                                <div class="budget-table-list" id="budget-items-list">
+                                    <!-- Dynamic rows -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- LOCAL INSIGHTS TAB -->
+                    <div class="tab-content" id="tab-insights">
+                        <div class="insights-container">
+                            <div class="insight-section">
+                                <h4><i class="fa-solid fa-bowl-food"></i> Must-Try Local Cuisine</h4>
+                                <ul class="insight-list" id="insights-food"></ul>
+                            </div>
+                            <div class="insight-section">
+                                <h4><i class="fa-solid fa-users-gear"></i> Cultural Etiquette</h4>
+                                <ul class="insight-list" id="insights-cultural"></ul>
+                            </div>
+                            <div class="insight-section">
+                                <h4><i class="fa-solid fa-shield-halved"></i> Safety & Pacing Notes</h4>
+                                <ul class="insight-list" id="insights-safety"></ul>
+                            </div>
+                            <div class="insight-section">
+                                <h4><i class="fa-solid fa-suitcase"></i> Recommended Packing List</h4>
+                                <ul class="insight-list" id="insights-packing"></ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- COMPLETE AI REPORT TAB -->
+                    <div class="tab-content" id="tab-raw">
+                        <div class="rendered-report-view" id="rendered-report-view">
+                            <p>Loading full travel dossier...</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+        
+        <!-- FOOTER -->
+        <footer class="app-footer">
+            <p>&copy; 2026 AI Travel Systems Inc. Powered by Google Gemini and CrewAI Flow Engine.</p>
+        </footer>
+    </div>
+
+    <!-- Flatpickr JS -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <!-- Main JavaScript App -->
+    <script src="/frontend/app.js?v=6.0"></script>
+</body>
+</html>
