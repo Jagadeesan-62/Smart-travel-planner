@@ -56,7 +56,7 @@ class FinalReportRequest(BaseModel):
     job_id: str
 
 # Gemini Initialization
-gemini_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY") or "AIzaSyCsehVYbggmlA-HE76XbUaIT0GnEDVgzfE"
+gemini_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY") 
 use_gemini = False
 model = None
 
